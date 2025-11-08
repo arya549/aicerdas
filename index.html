@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Cerdas — Demo</title>
+<style>
+:root {
+  --bg1:#03101f; --bg2:#061b33; --accent:#00e0ff;
+  --text:#e8f2ff; --muted:#94a3b8;
+}
+body {
+  margin:0; font-family:'Poppins',sans-serif;
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:var(--text); display:flex; justify-content:center;
+  min-height:100vh; padding:20px;
+}
+.app {
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px; width:90%; max-width:800px;
+  padding:20px; box-shadow:0 0 30px rgba(0,255,255,0.1);
+}
+h1 { text-align:center; color:var(--accent); margin-top:0; }
+#chat {
+  height:400px; overflow-y:auto; padding:10px;
+  background:rgba(0,0,0,0.2); border-radius:10px; margin-bottom:10px;
+}
+.msg { margin:8px 0; padding:10px; border-radius:10px; max-width:75%; }
+.user { background:rgba(0,255,255,0.1); margin-left:auto; text-align:right; }
+.ai { background:rgba(255,255,255,0.05); text-align:left; }
+textarea {
+  width:100%; height:80px; border-radius:10px;
+  background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1);
+  color:var(--text); padding:10px; resize:none;
+}
+button {
+  background:var(--accent); border:0; padding:10px 16px;
+  border-radius:10px; font-weight:bold; cursor:pointer; color:#002;
+  margin-top:8px;
+}
+button:hover { opacity:0.9; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🤖 AI Cerdas — Multibahasa</h1>
+  <div id="chat"></div>
+  <textarea id="input" placeholder="Tulis pertanyaan kamu di sini..."></textarea>
+  <button id="send">Kirim</button>
+</div>
+
+<script>
+// GANTI DENGAN API KEY MILIKMU (hanya untuk demo lokal)
+const OPENAI_API_KEY = "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"; // ⚠️ JANGAN upload ke internet
+
+const chatBox = document.getElementById("chat");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+
+function appendMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  div.innerHTML = `<b>${role === "user" ? "Kamu" : "AI"}:</b><br>${text}`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const userMsg = input.value.trim();
+  if (!userMsg) return;
+  appendMessage("user", userMsg);
+  input.value = "";
+
+  appendMessage("ai", "⏳ Sedang berpikir...");
+  const messages = [
+    { role: "system", content: "Kamu adalah AI cerdas yang bisa menjawab semua pertanyaan dalam berbagai bahasa, dengan gaya ramah dan ringkas." },
+    { role: "user", content: userMsg }
+  ];
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + OPENAI_API_KEY
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: messages,
+        temperature: 0.4,
+        max_tokens: 800
+      })
+    });
+
+    const data = await res.json();
+    const aiReply = data.choices?.[0]?.message?.content || "Maaf, tidak ada respons.";
+    chatBox.lastChild.innerHTML = `<b>AI:</b><br>${aiReply.replace(/\n/g,"<br>")}`;
+  } catch (err) {
+    chatBox.lastChild.innerHTML = `<b>AI:</b><br>⚠️ Error: ${err.message}`;
+  }
+}
+
+sendBtn.onclick = sendMessage;
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+</script>
+</body>
+</html>
